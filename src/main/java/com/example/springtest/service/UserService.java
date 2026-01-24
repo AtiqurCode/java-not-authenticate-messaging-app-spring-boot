@@ -2,6 +2,7 @@ package com.example.springtest.service;
 
 import com.example.springtest.dto.UserRequest;
 import com.example.springtest.dto.UserResponse;
+import com.example.springtest.dto.UserWithChatsResponse;
 import com.example.springtest.entity.User;
 import com.example.springtest.exception.ResourceNotFoundException;
 import com.example.springtest.mapper.UserMapper;
@@ -82,6 +83,19 @@ public class UserService {
         log.debug("Fetching user with UUID: {}", uuid);
         User user = findUserByUuid(uuid);
         return userMapper.toResponse(user);
+    }
+
+    /**
+     * Get user by UUID with all chats
+     */
+    @Transactional(readOnly = true)
+    public UserWithChatsResponse getUserWithChatsByUuid(String uuid) {
+        log.debug("Fetching user with UUID: {} including all chats", uuid);
+        User user = findUserByUuid(uuid);
+        // Trigger lazy loading of chats
+        user.getSentChats().size();
+        user.getReceivedChats().size();
+        return userMapper.toResponseWithChats(user);
     }
 
     /**

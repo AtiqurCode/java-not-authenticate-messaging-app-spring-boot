@@ -2,6 +2,7 @@ package com.example.springtest.controller;
 
 import com.example.springtest.dto.UserRequest;
 import com.example.springtest.dto.UserResponse;
+import com.example.springtest.dto.UserWithChatsResponse;
 import com.example.springtest.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -70,6 +71,17 @@ public class UserController {
     public ResponseEntity<UserResponse> getUserByUuid(@PathVariable String uuid) {
         log.info("GET /api/v1/users/uuid/{} - Retrieve user by UUID", uuid);
         UserResponse user = userService.getUserByUuid(uuid);
+        return ResponseEntity.ok(user);
+    }
+
+    /**
+     * Get user by UUID with all chats
+     * GET /api/v1/users/uuid/{uuid}/with-chats
+     */
+    @GetMapping("/uuid/{uuid}/with-chats")
+    public ResponseEntity<UserWithChatsResponse> getUserWithChatsByUuid(@PathVariable String uuid) {
+        log.info("GET /api/v1/users/uuid/{}/with-chats - Retrieve user with all chats", uuid);
+        UserWithChatsResponse user = userService.getUserWithChatsByUuid(uuid);
         return ResponseEntity.ok(user);
     }
 
