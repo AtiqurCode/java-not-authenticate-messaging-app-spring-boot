@@ -98,13 +98,16 @@ public class ChatService {
 
     /**
      * Get all chats between two users (both sent and received)
+     * Only returns messages exchanged directly between user1 and user2
      */
     @Transactional(readOnly = true)
     public List<ChatResponse> getChatsBetweenUsers(String userUuid1, String userUuid2) {
         log.debug("Fetching chats between users: {} and {}", userUuid1, userUuid2);
         User user1 = findUserByUuid(userUuid1);
         User user2 = findUserByUuid(userUuid2);
-        return chatRepository.findByChatFromOrChatTo(user1, user2)
+        
+        // Use repository method to get only chats between these two specific users
+        return chatRepository.findChatsBetweenUsers(user1, user2)
                 .stream()
                 .map(chatMapper::toResponse)
                 .collect(Collectors.toList());

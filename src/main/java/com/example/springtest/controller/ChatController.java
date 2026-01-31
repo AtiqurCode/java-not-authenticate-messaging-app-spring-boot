@@ -6,12 +6,15 @@ import com.example.springtest.dto.ChatFilterRequest;
 import com.example.springtest.dto.ChatBetweenUsersRequest;
 import com.example.springtest.dto.ChatUpdateRequest;
 import com.example.springtest.service.ChatService;
+import com.example.springtest.service.PusherService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @RestController
@@ -20,6 +23,7 @@ import java.util.List;
 public class ChatController {
 
     private final ChatService chatService;
+    private final PusherService pusherService;
 
     /**
      * Create a new chat message
@@ -27,8 +31,33 @@ public class ChatController {
      */
     @PostMapping
     public ResponseEntity<ChatResponse> createChat(@RequestBody ChatRequest chatRequest) {
-        log.info("POST /api/v1/chats - Create chat message");
+        log.info("POST /api/v1/chats - Create chat message from {} to {}", 
+                 chatRequest.getChatFromUuid(), chatRequest.getChatToUuid());
+        
+        // Save message to database
         ChatResponse response = chatService.createChat(chatRequest);
+        
+        // Trigger Pusher event to recipient only
+        try {
+            Map<String, Object> messageData = new HashMap<>();
+            messageData.put("id", response.getId());
+            messageData.put("chatFromUuid", response.getChatFrom().getUuid());
+            messageData.put("chatToUuid", response.getChatTo().getUuid());
+            messageData.put("message", response.getMessage());
+            messageData.put("senderName", response.getChatFrom().getName());
+            // Convert LocalDateTime to ISO string to avoid Gson reflection issues
+            messageData.put("createdAt", response.getCreatedAt() != null ? response.getCreatedAt().toString() : null);
+            
+            // Send to recipient's channel only (toUUID)
+            pusherService.sendMessageToUser(chatRequest.getChatToUuid(), messageData);
+            
+            log.info("Pusher event triggered to recipient {} for message ID: {}", 
+                     chatRequest.getChatToUuid(), response.getId());
+        } catch (Exception e) {
+            log.error("Failed to trigger Pusher event, but message was saved", e);
+            // Don't fail the response - message is already saved
+        }
+        
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
@@ -83,8 +112,8 @@ public class ChatController {
     @PostMapping("/between")
     public ResponseEntity<List<ChatResponse>> getChatsBetweenUsers(@RequestBody ChatBetweenUsersRequest request) {
         log.info("POST /api/v1/chats/between - Retrieve chats between users: {} and {}", 
-                request.getUserUuid1(), request.getUserUuid2());
-        List<ChatResponse> chats = chatService.getChatsBetweenUsers(request.getUserUuid1(), request.getUserUuid2());
+            request.getChatFromUuid(), request.getChatToUuid());
+        List<ChatResponse> chats = chatService.getChatsBetweenUsers(request.getChatFromUuid(), request.getChatToUuid());
         return ResponseEntity.ok(chats);
     }
 

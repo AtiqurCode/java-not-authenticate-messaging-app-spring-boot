@@ -8,6 +8,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ChatBetweenUsersRequest {
-    private String userUuid1;
-    private String userUuid2;
+    private String chatFromUuid;
+    private String chatToUuid;
 }
