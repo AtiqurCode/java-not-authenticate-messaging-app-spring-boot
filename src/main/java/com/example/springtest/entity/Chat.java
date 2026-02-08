@@ -32,6 +32,9 @@ public class Chat {
     @Column(columnDefinition = "TEXT", nullable = false)
     private String message;
 
+    @Column(name = "is_encrypted", nullable = false)
+    private Boolean isEncrypted = false;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

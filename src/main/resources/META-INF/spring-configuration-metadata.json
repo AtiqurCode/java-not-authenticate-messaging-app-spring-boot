@@ -1,0 +1,10 @@
+{
+  "properties": [
+    {
+      "name": "chat.encryption.secret-key",
+      "type": "java.lang.String",
+      "description": "Secret key used for AES-256 encryption of chat messages. IMPORTANT: Change this in production to a strong, random value.",
+      "defaultValue": "MySecretKey12345678901234567890SecureKey!@#"
+    }
+  ]
+}

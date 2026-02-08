@@ -24,6 +24,7 @@ public class ChatService {
     private final ChatRepository chatRepository;
     private final UserRepository userRepository;
     private final ChatMapper chatMapper;
+    private final EncryptionService encryptionService;
 
     /**
      * Create a new chat message
@@ -38,7 +39,10 @@ public class ChatService {
         User chatToUser = findUserByUuid(chatRequest.getChatToUuid());
         
         Chat chat = new Chat();
-        chat.setMessage(chatRequest.getMessage());
+        // Encrypt message before saving
+        String encryptedMessage = encryptionService.encrypt(chatRequest.getMessage());
+        chat.setMessage(encryptedMessage);
+        chat.setIsEncrypted(true);
         chat.setChatFrom(chatFromUser);
         chat.setChatTo(chatToUser);
 
@@ -121,7 +125,10 @@ public class ChatService {
         Chat chat = findChatById(id);
         validateMessageNotEmpty(chatRequest.getMessage());
         
-        chat.setMessage(chatRequest.getMessage());
+        // Encrypt message before saving
+        String encryptedMessage = encryptionService.encrypt(chatRequest.getMessage());
+        chat.setMessage(encryptedMessage);
+        chat.setIsEncrypted(true);
         Chat updatedChat = chatRepository.save(chat);
         
         log.info("Chat with id: {} updated successfully", id);

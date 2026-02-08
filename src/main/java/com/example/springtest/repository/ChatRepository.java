@@ -25,4 +25,14 @@ public interface ChatRepository extends JpaRepository<Chat, Long> {
            "(c.chatFrom = :user2 AND c.chatTo = :user1) " +
            "ORDER BY c.createdAt ASC")
     List<Chat> findChatsBetweenUsers(@Param("user1") User user1, @Param("user2") User user2);
+
+    /**
+     * Find all chats by encryption status
+     */
+    List<Chat> findByIsEncrypted(Boolean isEncrypted);
+
+    /**
+     * Count chats by encryption status
+     */
+    long countByIsEncrypted(Boolean isEncrypted);
 }
