@@ -19,10 +19,33 @@ public class PusherService {
      */
     public void triggerEvent(String channel, String event, Map<String, Object> data) {
         try {
-            pusher.trigger(channel, event, data);
-            log.info("Pusher event triggered - Channel: {}, Event: {}", channel, event);
+            log.info("==========================================");
+            log.info("PUSHER TRIGGER ATTEMPT");
+            log.info("Channel: {}", channel);
+            log.info("Event: {}", event);
+            log.info("Data: {}", data);
+            log.info("==========================================");
+            
+            com.pusher.rest.data.Result result = pusher.trigger(channel, event, data);
+            
+            log.info("==========================================");
+            log.info("PUSHER TRIGGER RESULT");
+            log.info("Status: {}", result.getStatus());
+            log.info("Message: {}", result.getMessage());
+            log.info("Channel: {}", channel);
+            log.info("Event: {}", event);
+            log.info("==========================================");
+            
+            if (result.getStatus() != com.pusher.rest.data.Result.Status.SUCCESS) {
+                log.error("❌ Pusher trigger failed - Status: {}, Message: {}", 
+                    result.getStatus(), result.getMessage());
+                throw new RuntimeException("Pusher trigger failed: " + result.getMessage());
+            }
+            
+            log.info("✅ Pusher event triggered successfully - Channel: {}, Event: {}", channel, event);
         } catch (Exception e) {
-            log.error("Failed to trigger Pusher event", e);
+            log.error("❌ Failed to trigger Pusher event", e);
+            e.printStackTrace();
             throw new RuntimeException("Failed to trigger Pusher event: " + e.getMessage());
         }
     }
