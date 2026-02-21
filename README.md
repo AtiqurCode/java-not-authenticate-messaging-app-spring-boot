@@ -38,10 +38,12 @@ The application features a beautiful responsive design with full dark mode suppo
 <div align="center">
   <img src="public/screenshots/uchat2.png" alt="Light Mode" width="45%" />
   <img src="public/screenshots/uchat3.png" alt="Dark Mode" width="45%" />
+  <br/>
   <img src="public/screenshots/uchat1.png" alt="Chat Screenshot" width="45%" />
-  <video src="public/screenshots/demo.mp4" alt="Demo" width="45%" controls autoplay muted loop>
-    Your browser does not support the video tag.
-  </video>
+  <br/>
+  <a href="public/screenshots/demo.mp4">
+    <img src="https://img.shields.io/badge/▶️_Watch_Demo_Video-FF0000?style=for-the-badge&logo=youtube&logoColor=white" alt="Watch Demo Video" />
+  </a>
 </div>
 
 ### Key Features in Action
