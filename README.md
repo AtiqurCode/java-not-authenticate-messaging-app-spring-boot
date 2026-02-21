@@ -29,7 +29,37 @@ This is a **monorepo** containing two applications:
 
 ---
 
-## 🛠️ Tech Stack
+## � Screenshots
+
+### Light & Dark Mode Support
+
+The application features a beautiful responsive design with full dark mode support:
+
+<div align="center">
+  <img src="public/screenshots/uchat2.png" alt="Light Mode" width="45%" />
+  <img src="public/screenshots/uchat3.png" alt="Dark Mode" width="45%" />
+  <img src="public/screenshots/uchat1.png" alt="Chat Screenshot" width="45%" />
+  <img src="public/screenshots/demo.webm" alt="Demo" width="45%" />
+</div>
+
+### Key Features in Action
+
+| Feature | Description |
+|---------|-------------|
+| **Real-time Messaging** | Send and receive messages instantly with Pusher |
+| **Theme Toggle** | Switch between light and dark modes seamlessly |
+| **Message Management** | Edit and delete messages with instant sync |
+| **UUID-based Identity** | Simple user identification without authentication |
+| **Responsive Design** | Works perfectly on desktop and mobile devices |
+
+> **Note:** Place your screenshots in the `public/screenshots/` directory. Recommended files:
+> - `uchat2.png` - Application in light mode
+> - `uchat3.png` - Application in dark mode
+> - `demo.webm` - (Optional) Animated demo of features
+
+---
+
+## �🛠️ Tech Stack
 
 ### Backend (This Repository)
 - **Framework:** Spring Boot 3.x
@@ -79,24 +109,38 @@ Create a MySQL database:
 CREATE DATABASE springchat_db;
 ```
 
-Update `application.properties` with your database credentials:
+Update `src/main/resources/application.properties` with your database credentials:
 ```properties
+# Database Configuration
 spring.datasource.url=jdbc:mysql://localhost:3306/springchat_db
 spring.datasource.username=root
 spring.datasource.password=your_password
 spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+
+# JPA/Hibernate Configuration
 spring.jpa.hibernate.ddl-auto=validate
 spring.jpa.show-sql=false
+spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.MySQL8Dialect
+
+# Flyway Migration
+spring.flyway.enabled=true
+spring.flyway.locations=classpath:db/migration
+
+# Server Configuration
+server.port=8081
 ```
 
 #### Configure Pusher (Optional for Real-time Features)
 Update Pusher credentials in your configuration:
 ```properties
+# Pusher Configuration
 pusher.app-id=YOUR_APP_ID
 pusher.key=YOUR_APP_KEY
 pusher.secret=YOUR_APP_SECRET
 pusher.cluster=ap1
 ```
+
+> **Get Pusher Credentials:** Sign up at [pusher.com](https://pusher.com) and create a new Channels app.
 
 #### Build the project
 ```bash
@@ -137,10 +181,19 @@ Update `nuxt.config.ts` with the backend API URL:
 export default defineNuxtConfig({
   runtimeConfig: {
     public: {
-      apiBase: 'http://localhost:8081/api/v1'
+      apiBase: 'http://localhost:8081/api/v1',
+      pusherKey: 'YOUR_PUSHER_KEY',
+      pusherCluster: 'ap1'
     }
   }
 })
+```
+
+You can also create a `.env` file in the frontend root directory:
+```env
+NUXT_PUBLIC_API_BASE=http://localhost:8081/api/v1
+NUXT_PUBLIC_PUSHER_KEY=YOUR_PUSHER_KEY
+NUXT_PUBLIC_PUSHER_CLUSTER=ap1
 ```
 
 #### Run the development server
@@ -154,6 +207,47 @@ npm run dev
 ```
 
 The frontend will start on **http://localhost:3000**
+
+---
+
+## 🎯 Running Both Applications
+
+For the best experience, you need both backend and frontend running:
+
+### Option 1: Separate Terminals (Recommended for Development)
+
+**Terminal 1 - Backend:**
+```bash
+cd springchat
+./mvnw spring-boot:run
+```
+
+**Terminal 2 - Frontend:**
+```bash
+cd chatmodule
+pnpm dev
+```
+
+### Option 2: Production Build
+
+**Backend:**
+```bash
+cd springchat
+./mvnw clean package
+java -jar target/springtest-0.0.1-SNAPSHOT.jar
+```
+
+**Frontend:**
+```bash
+cd chatmodule
+pnpm build
+pnpm preview
+```
+
+### Verify Setup
+1. Backend should be running at: **http://localhost:8081**
+2. Frontend should be running at: **http://localhost:3000**
+3. Test backend health: `curl http://localhost:8081/api/v1/chats`
 
 ---
 
@@ -228,17 +322,28 @@ CREATE TABLE users (
 ```sql
 CREATE TABLE chats (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
-  chat_from_uuid VARCHAR(255),
-  chat_to_uuid VARCHAR(255),
-  message LONGTEXT,
+  chat_from_uuid VARCHAR(255) NOT NULL,
+  chat_to_uuid VARCHAR(255) NOT NULL,
+  message LONGTEXT NOT NULL,
   is_encrypted BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   deleted_at TIMESTAMP NULL,
-  FOREIGN KEY (chat_from_uuid) REFERENCES users(uuid),
-  FOREIGN KEY (chat_to_uuid) REFERENCES users(uuid)
+  INDEX idx_chat_from (chat_from_uuid),
+  INDEX idx_chat_to (chat_to_uuid),
+  INDEX idx_created_at (created_at),
+  FOREIGN KEY (chat_from_uuid) REFERENCES users(uuid) ON DELETE CASCADE,
+  FOREIGN KEY (chat_to_uuid) REFERENCES users(uuid) ON DELETE CASCADE
 );
 ```
+
+### Database Migrations
+The project uses **Flyway** for database version control. Migrations are located in `src/main/resources/db/migration/`:
+
+- **V1__Create_Users_And_Chats_Tables.sql** - Initial schema
+- **V2__Insert_Sample_Data.sql** - Sample users and messages
+- **V3__Add_Updated_At_To_Chats.sql** - Add updated_at column
+- **V4__Add_Encryption_Support.sql** - Add encryption support (if applicable)
 
 ---
 
@@ -253,8 +358,12 @@ CREATE TABLE chats (
 
 ## 📂 Project Structure
 
+### Backend (Spring Boot)
 ```
 springchat/
+├── docs/
+│   └── screenshots/          # Project screenshots and visual assets
+│       └── README.md         # Screenshots documentation
 ├── src/
 │   ├── main/
 │   │   ├── java/
@@ -267,38 +376,133 @@ springchat/
 │   │   │       │   ├── UserService.java
 │   │   │       │   └── PusherService.java
 │   │   │       ├── entity/
+│   │   │       │   ├── Chat.java
+│   │   │       │   └── User.java
 │   │   │       ├── repository/
+│   │   │       │   ├── ChatRepository.java
+│   │   │       │   └── UserRepository.java
 │   │   │       ├── dto/
+│   │   │       │   └── ChatDTO.java
 │   │   │       └── config/
+│   │   │           ├── PusherConfig.java
+│   │   │           └── CorsConfig.java
 │   │   └── resources/
 │   │       ├── application.properties
 │   │       └── db/migration/
+│   │           ├── V1__Create_Users_And_Chats_Tables.sql
+│   │           ├── V2__Insert_Sample_Data.sql
+│   │           └── V3__Add_Updated_At_To_Chats.sql
 │   └── test/
-├── pom.xml
-└── mvnw
+│       └── java/
+├── target/                   # Compiled classes and build artifacts
+├── pom.xml                   # Maven dependencies and build config
+├── mvnw                      # Maven wrapper (Unix/Mac)
+├── mvnw.cmd                  # Maven wrapper (Windows)
+└── README.md                 # This file
+```
+
+### Frontend (Nuxt.js)
+```
+chatmodule/
+├── app/
+│   ├── components/           # Vue components
+│   │   ├── ChatMessages.vue
+│   │   ├── SendMessageInput.vue
+│   │   ├── RecipientInput.vue
+│   │   └── UserUuidDisplay.vue
+│   ├── composables/          # Vue composables
+│   │   └── useEncryption.ts
+│   ├── pages/
+│   │   └── index.vue         # Main chat page
+│   ├── utils/
+│   │   └── encryption.ts     # Encryption utilities
+│   └── app.vue               # Root component
+├── public/
+│   └── screenshots/          # Public screenshot assets
+├── server/
+│   └── routes/
+│       └── pusher/
+│           └── auth.post.ts  # Pusher authentication
+├── nuxt.config.ts            # Nuxt configuration
+├── package.json
+└── README.md
 ```
 
 ---
 
 ## 🧪 Testing
 
-### Manual Testing
+### Backend Testing
+
+#### Manual API Testing
 ```bash
+# Health check
+curl http://localhost:8081/api/v1/chats
+
 # Test Pusher connectivity
-curl -X POST http://localhost:8081/api/v1/chats/test-pusher/{USER_UUID}
+curl -X POST http://localhost:8081/api/v1/chats/test-pusher/user-123
 
 # Create a test message
 curl -X POST http://localhost:8081/api/v1/chats \
   -H "Content-Type: application/json" \
   -d '{
-    "chatFromUuid": "user-1",
-    "chatToUuid": "user-2",
-    "message": "Hello!"
+    "chatFromUuid": "550e8400-e29b-41d4-a716-446655440000",
+    "chatToUuid": "550e8400-e29b-41d4-a716-446655440001",
+    "message": "Hello, this is a test message!"
   }'
 
-# Get all messages
-curl http://localhost:8081/api/v1/chats
+# Get messages between two users
+curl -X POST http://localhost:8081/api/v1/chats/between \
+  -H "Content-Type: application/json" \
+  -d '{
+    "userUuid1": "550e8400-e29b-41d4-a716-446655440000",
+    "userUuid2": "550e8400-e29b-41d4-a716-446655440001"
+  }'
+
+# Update a message
+curl -X PUT http://localhost:8081/api/v1/chats/1 \
+  -H "Content-Type: application/json" \
+  -d '{
+    "message": "Updated message content"
+  }'
+
+# Delete a message
+curl -X DELETE http://localhost:8081/api/v1/chats/1
+
+# Get user by UUID
+curl http://localhost:8081/api/v1/users/uuid/550e8400-e29b-41d4-a716-446655440000
 ```
+
+### Frontend Testing
+
+#### Testing in Browser
+1. Open **http://localhost:3000**
+2. Open browser DevTools (F12)
+3. Check Console tab for any errors
+4. Check Network tab to verify API calls
+5. Test dark mode toggle
+6. Send messages and verify real-time updates
+
+#### Testing with Multiple Users
+1. Open the app in two different browsers (or incognito mode)
+2. Use different UUIDs for each user
+3. Send messages between them
+4. Verify real-time delivery via Pusher
+
+---
+
+## 🎨 Screenshots & Documentation
+
+Project screenshots are organized in the following directories:
+
+- **Backend:** `springchat/docs/screenshots/`
+- **Frontend:** `chatmodule/public/screenshots/`
+
+To add screenshots:
+1. Place PNG/JPG images in the appropriate directory
+2. Use descriptive filenames (e.g., `light-mode.png`, `dark-mode.png`)
+3. Update this README to reference new screenshots
+4. Optimize images to keep file sizes reasonable (< 1MB each)
 
 ---
 
@@ -308,36 +512,164 @@ curl http://localhost:8081/api/v1/chats
 
 **Port 8081 already in use:**
 ```bash
-# Change port in application.properties
+# Option 1: Change port in application.properties
 server.port=8082
+
+# Option 2: Kill process using port 8081 (macOS/Linux)
+lsof -ti:8081 | xargs kill -9
+
+# Option 3: Kill process using port 8081 (Windows)
+netstat -ano | findstr :8081
+taskkill /PID <PID> /F
 ```
 
 **MySQL connection failed:**
 - Ensure MySQL is running: `mysql -u root -p`
 - Check database exists: `SHOW DATABASES;`
-- Update credentials in `application.properties`
+- Verify credentials in `application.properties`
+- Check MySQL is running on port 3306: `netstat -an | grep 3306`
+
+**Flyway migration errors:**
+```bash
+# Reset database (WARNING: deletes all data)
+DROP DATABASE springchat_db;
+CREATE DATABASE springchat_db;
+
+# Then restart the Spring Boot application
+./mvnw spring-boot:run
+```
 
 **Pusher not working:**
-- Verify Pusher credentials are correct
+- Verify Pusher credentials are correct in `application.properties`
 - Check API limits and quotas on Pusher dashboard
-- See backend logs for push event details
+- Ensure your Pusher app is in the correct cluster (e.g., `ap1`)
+- Check backend logs for Pusher event details
+- Verify CORS is properly configured
+
+**Build failures:**
+```bash
+# Clean build
+./mvnw clean
+
+# Skip tests
+./mvnw clean install -DskipTests
+
+# Update dependencies
+./mvnw dependency:resolve
+```
 
 ### Frontend Issues
 
 **Port 3000 already in use:**
 ```bash
-npm run dev -- --port 3001
+# Option 1: Use different port
+pnpm dev -- --port 3001
+
+# Option 2: Kill process (macOS/Linux)
+lsof -ti:3000 | xargs kill -9
 ```
 
 **API not responding:**
 - Verify backend is running on `http://localhost:8081`
-- Check `nuxt.config.ts` API base URL
+- Check `nuxt.config.ts` API base URL matches backend port
 - Open browser DevTools → Network tab to see API calls
+- Verify CORS configuration on backend
 
 **Real-time updates not working:**
-- Check Pusher connection in browser DevTools → Network
+- Check Pusher connection in browser DevTools → Network → WS (WebSocket)
 - Verify you're subscribed to correct channel: `chat-{YOUR_UUID}`
-- Check browser console for errors
+- Check browser console for Pusher connection errors
+- Ensure Pusher key matches between frontend and backend
+- Verify internet connection (Pusher requires external connectivity)
+
+**Dependencies installation failed:**
+```bash
+# Clear cache and reinstall
+rm -rf node_modules pnpm-lock.yaml
+pnpm install
+
+# Or use npm
+rm -rf node_modules package-lock.json
+npm install
+```
+
+**Dark mode not working:**
+- Check browser console for CSS errors
+- Clear browser cache (Ctrl+Shift+Delete)
+- Verify Tailwind CSS is properly configured
+
+### General Issues
+
+**CORS errors in browser console:**
+Add this configuration to your Spring Boot backend:
+```java
+@Configuration
+public class CorsConfig implements WebMvcConfigurer {
+    @Override
+    public void addCorsMappings(CorsRegistry registry) {
+        registry.addMapping("/api/**")
+                .allowedOrigins("http://localhost:3000")
+                .allowedMethods("GET", "POST", "PUT", "DELETE")
+                .allowCredentials(true);
+    }
+}
+```
+
+**Messages not syncing in real-time:**
+1. Check both users are online
+2. Verify Pusher credentials match on both frontend and backend
+3. Check network tab for Pusher WebSocket connection
+4. Ensure both users are subscribed to correct channels
+
+---
+
+## 🔧 Configuration Files
+
+### Backend Configuration (`application.properties`)
+```properties
+# Server
+server.port=8081
+
+# Database
+spring.datasource.url=jdbc:mysql://localhost:3306/springchat_db
+spring.datasource.username=root
+spring.datasource.password=your_password
+spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+
+# JPA
+spring.jpa.hibernate.ddl-auto=validate
+spring.jpa.show-sql=false
+spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.MySQL8Dialect
+
+# Flyway
+spring.flyway.enabled=true
+spring.flyway.locations=classpath:db/migration
+
+# Pusher
+pusher.app-id=YOUR_APP_ID
+pusher.key=YOUR_APP_KEY
+pusher.secret=YOUR_APP_SECRET
+pusher.cluster=ap1
+```
+
+### Frontend Configuration (`.env`)
+```env
+# API Configuration
+NUXT_PUBLIC_API_BASE=http://localhost:8081/api/v1
+
+# Pusher Configuration
+NUXT_PUBLIC_PUSHER_KEY=YOUR_PUSHER_KEY
+NUXT_PUBLIC_PUSHER_CLUSTER=ap1
+```
+
+### Maven Configuration (`pom.xml`)
+Key dependencies:
+- Spring Boot Starter Web
+- Spring Boot Starter Data JPA
+- MySQL Connector
+- Flyway Core
+- Pusher Java Server SDK
+- Lombok
 
 ---
 
