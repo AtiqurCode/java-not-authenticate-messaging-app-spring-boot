@@ -39,7 +39,9 @@ The application features a beautiful responsive design with full dark mode suppo
   <img src="public/screenshots/uchat2.png" alt="Light Mode" width="45%" />
   <img src="public/screenshots/uchat3.png" alt="Dark Mode" width="45%" />
   <img src="public/screenshots/uchat1.png" alt="Chat Screenshot" width="45%" />
-  <a src="public/screenshots/demo.webm" alt="Demo" width="45%" />
+  <video src="public/screenshots/demo.webm" alt="Demo" width="45%" controls autoplay muted loop>
+    Your browser does not support the video tag.
+  </video>
 </div>
 
 ### Key Features in Action
